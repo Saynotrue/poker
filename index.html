@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>멀티 포커 칩 판</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            margin: 0;
+            background: #1e1e1e;
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+            padding-bottom: 140px;
+        }
+
+        /* 상단 정보 영역 */
+        #round {
+            font-size: 22px;
+            color: #1abc9c;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        #phase {
+            font-size: 16px;
+            color: #16a085;
+            margin-bottom: 20px;
+        }
+
+        .initial-setup {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #333;
+            border-radius: 10px;
+            display: inline-flex;
+            gap: 10px;
+        }
+
+        /* 플레이어 카드 배치 */
+        .players {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            padding: 10px;
+        }
+
+        .player {
+            width: 320px;
+            background: #2b2b2b;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #444;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        /* 플레이어 삭제 버튼 (x) */
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 20px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .remove-btn:hover {
+            color: #e74c3c;
+        }
+
+        .player.folded {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+
+        .player.debt {
+            border-color: #e74c3c;
+        }
+
+        .player h3 {
+            color: #f1c40f;
+            margin: 0 0 15px 0;
+            cursor: pointer;
+        }
+
+        .bet-info {
+            font-size: 14px;
+            color: #aaa;
+            margin: 2px 0;
+        }
+
+        .chips {
+            font-size: 32px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        /* ⭐ 칩 버튼: 크기 고정 및 찌그러짐 방지 */
+        .chip-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .chip-btn {
+            width: 55px !important;
+            height: 55px !important;
+            /* 크기 강제 고정 */
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            flex-shrink: 0;
+            /* 절대 줄어들지 않음 */
+            box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* 1. 칩 버튼 숫자 색상 및 아이폰 자동 링크 방지 */
+        .chip-1 {
+            background: #95a5a6 !important;
+            color: #1e1e1e !important;
+            /* 글자색 검정 고정 */
+            text-decoration: none !important;
+        }
+
+        .chip-5 {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .chip-10 {
+            background: #3498db;
+            color: white;
+        }
+
+        .chip-25 {
+            background: #27ae60;
+            color: white;
+        }
+
+        /* 2. 하단 액션 버튼 영역 (겹침의 핵심 원인 해결) */
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            /* 중앙 정렬 */
+            justify-content: space-between;
+            gap: 5px;
+            /* 간격을 좁혀서 공간 확보 */
+            height: 100px;
+            /* 높이를 충분히 확보 */
+        }
+
+        /* 다이, 올인 버튼 크기 최적화 */
+        .action-btn-rect {
+            width: 50px !important;
+            /* 가로폭을 줄여서 입력창 공간 확보 */
+            height: 85px !important;
+            /* 높이는 유지 */
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            flex-shrink: 0;
+            /* 절대 찌그러지지 않음 */
+            font-size: 13px;
+        }
+
+        .fold {
+            background: #555;
+        }
+
+        .allin {
+            background: #c0392b;
+        }
+
+        /* 3. 가운데 입력창 그룹 (베팅/대출 칸) */
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 110px;
+            /* 중요: 부모를 뚫고 나가지 않게 방지 */
+        }
+
+        .custom-input {
+            width: 100%;
+            height: 36px;
+            border-radius: 6px;
+            border: none;
+            text-align: center;
+            font-size: 13px;
+            background: #eeeeee;
+            color: #000;
+            /* iOS 둥근 모서리 방지 */
+        }
+
+        /* 추가: 액션 버튼들이 너무 높게 느껴진다면 높이 살짝 조절 */
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            height: 80px;
+            /* 고정 높이 유지 */
+        }
+
+        /* 단계 이동 버튼 */
+        .next-phase-container {
+            margin: 40px auto;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        .next-phase {
+            width: 100%;
+            padding: 20px;
+            background: #8e44ad;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 하단 고정 팟 */
+        #pot {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #111;
+            padding: 20px;
+            font-size: 24px;
+            border-top: 2px solid #444;
+            font-weight: bold;
+        }
+
+        /* 모달 */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .modal-content {
+            background: #2b2b2b;
+            padding: 30px;
+            border-radius: 15px;
+            width: 300px;
+        }
+
+        /* 모바일 화면이 아주 작을 경우를 대비한 추가 보정 */
+        @media (max-width: 360px) {
+            .player {
+                width: 100%;
+                /* 플레이어 박스가 화면을 꽉 채우게 */
+                padding: 15px 10px;
+            }
+
+            .chip-btn {
+                width: 50px !important;
+                height: 50px !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🃏 멀티 포커 칩</h1>
+
+    <div id="round">라운드: 프리플랍</div>
+    <div id="phase">단계: 베팅</div>
+
+    <div class="initial-setup">
+        <input id="newPlayerName" placeholder="내 이름" style="padding:8px;"
+            onkeydown="if(event.isComposing) return; if(event.key === 'Enter') reqAddPlayer();">
+
+        <input id="initialChips" type="number" value="1000" style="width:60px; padding:8px;">
+        <button onclick="reqAddPlayer()" style="background:#2980b9; color:white;">참가</button>
+    </div>
+    <div class="players" id="playersContainer">
+    </div>
+
+    <div class="next-phase-container">
+        <button class="next-phase" onclick="reqNextPhase()">단계 이동 (턴 넘기기)</button>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <button onclick="reqResetGame()"
+            style="background: #444; color: #bbb; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; cursor: pointer;">
+            🔄 전체 게임 초기화 (칩 복구)
+        </button>
+    </div>
+
+    <div id="pot">POT: <span id="potAmount">0</span></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalText"></h2>
+            <button class="modal-btn" onclick="reqConfirmWin()" style="background:#27ae60;">확인</button>
+            <button class="modal-btn" onclick="closeModal()" style="background:#c0392b;">취소</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // 브라우저마다 고유한 ID 생성 또는 가져오기
+        if (!localStorage.getItem('poker_uuid')) {
+            localStorage.setItem('poker_uuid', 'user_' + Math.random().toString(36).substr(2, 9));
+        }
+        const MY_UUID = localStorage.getItem('poker_uuid');
+
+        const socket = io(); // 서버 연결
+
+        let currentWinnerId = null; // 승리 처리용 임시 변수
+
+        // === 서버로부터 데이터 받아서 화면 그리기 (핵심) ===
+        socket.on('updateState', (state) => {
+            renderGame(state);
+        });
+
+        function renderGame(state) {
+            // 1. 라운드 및 팟 정보
+            document.getElementById('round').innerText = "라운드: " + state.rounds[state.roundIndex];
+            document.getElementById('phase').innerText = "단계: " + (state.phase === 'bet' ? '베팅' : '카드 확인/드로우');
+            document.getElementById('potAmount').innerText = state.pot;
+
+            // 2. 플레이어 리스트 렌더링
+            const container = document.getElementById('playersContainer');
+            container.innerHTML = '';
+
+            // 투표 계산을 위한 변수
+            const activePlayers = state.players.filter(p => !p.folded);
+            const activeCount = activePlayers.length;
+            // 실제 게임 중인(active) 사람 중 준비 완료한 사람만 카운트
+            const readyCount = state.readyPlayers.filter(id =>
+                state.players.some(p => p.id === id && !p.folded)
+            ).length;
+
+            state.players.forEach(p => {
+                const pDiv = document.createElement('div');
+                // socket.id가 바뀌어도 UUID가 같으면 '나'로 인식
+                const isMe = (p.id === socket.id || p.uuid === MY_UUID);
+                const isReady = state.readyPlayers.includes(p.id);
+
+                pDiv.className = `player ${p.folded ? 'folded' : ''} ${p.inDebt ? 'debt' : ''}`;
+
+                // 준비 완료 시 보라색 테두리 효과
+                if (isReady && !p.folded) {
+                    pDiv.style.boxShadow = "0 0 20px #8e44ad";
+                    pDiv.style.borderColor = "#8e44ad";
+                }
+
+                pDiv.innerHTML = `
+            ${isMe ? `<button class="remove-btn" onclick="reqRemovePlayer('${p.id}')">×</button>` : ''}
+            
+            <h3 onclick="${isMe ? `openWinModal('${p.id}', '${p.name}')` : ''}">
+                ${p.name} ${isMe ? '(나)' : ''} ${isReady && !p.folded ? '✅' : ''}
+            </h3>
+            
+            <div class="bet-info"><span>베팅:</span> <span>${p.bet}</span></div>
+            <div class="bet-info" style="color:#e67e22"><span>콜 필요:</span> <span>${p.callNeed}</span></div>
+            
+            <div class="chips">${p.chips}</div>
+
+            <div class="chip-buttons" style="${isMe ? '' : 'pointer-events: none; opacity: 0.5;'}">
+                <button class="chip-btn chip-1" onclick="reqBet('${p.id}', 1)">1</button>
+                <button class="chip-btn chip-5" onclick="reqBet('${p.id}', 5)">5</button>
+                <button class="chip-btn chip-10" onclick="reqBet('${p.id}', 10)">10</button>
+                <button class="chip-btn chip-25" onclick="reqBet('${p.id}', 25)">25</button>
+            </div>
+
+            <div class="action-buttons" style="${isMe ? '' : 'pointer-events: none; opacity: 0.5;'}">
+                <button class="action-btn-rect fold" onclick="reqFold('${p.id}')">다이</button>
+                <div class="input-group">
+                    <input type="number" placeholder="베팅" class="custom-input" 
+                        ${isMe ? '' : 'disabled'}
+                        onkeydown="if(event.key==='Enter') reqBetInput('${p.id}', this)">
+                    <input type="number" placeholder="대출" class="custom-input" 
+                        ${isMe ? '' : 'disabled'}
+                        onkeydown="if(event.key==='Enter') reqLoan('${p.id}', this)">
+                </div>
+                <button class="action-btn-rect allin" onclick="reqAllIn('${p.id}')">올인</button>
+            </div>
+        `;
+                container.appendChild(pDiv);
+            });
+
+            // 3. 단계 이동 버튼 상태 업데이트
+            const nextBtn = document.querySelector('.next-phase');
+            const isMeReady = state.readyPlayers.includes(socket.id);
+
+            if (state.roundIndex === state.rounds.length - 1 && state.phase === 'draw') {
+                nextBtn.innerText = "승자를 선택해주세요";
+                nextBtn.disabled = true;
+                nextBtn.style.background = "#555";
+            } else {
+                nextBtn.disabled = false;
+                if (activeCount === 0) {
+                    nextBtn.innerText = "참가자가 없습니다";
+                } else {
+                    nextBtn.innerText = `다음 단계 이동 동의 (${readyCount}/${activeCount})`;
+                }
+                nextBtn.style.background = isMeReady ? "#27ae60" : "#8e44ad";
+            }
+        }
+
+        // === 액션 요청 함수들 (서버로 전송) ===
+
+        function reqAddPlayer() {
+            const name = document.getElementById('newPlayerName').value.trim();
+            const chips = parseInt(document.getElementById('initialChips').value);
+            if (name) {
+                localStorage.setItem('poker_name', name);
+
+                // 서버에 참가 요청 시 UUID도 같이 보냄
+                socket.emit('addPlayer', { name, initialChips: chips, uuid: MY_UUID });
+                document.getElementById('newPlayerName').value = '';
+            }
+        }
+
+        function reqBet(id, amount) {
+            socket.emit('actionBet', { playerId: id, amount: amount });
+        }
+
+        function reqBetInput(id, input) {
+            const amount = parseInt(input.value);
+            if (!isNaN(amount) && amount > 0) {
+                socket.emit('actionBet', { playerId: id, amount: amount });
+                input.value = '';
+            }
+        }
+
+        function reqAllIn(id) {
+            if (confirm("정말 올인하시겠습니까?")) {
+                socket.emit('actionAllIn', { playerId: id });
+            }
+        }
+
+        function reqFold(id) {
+            if (confirm("다이(Fold) 하시겠습니까?")) {
+                socket.emit('actionFold', { playerId: id });
+            }
+        }
+
+        function reqLoan(id, input) {
+            const amount = parseInt(input.value);
+            if (!isNaN(amount) && amount > 0) {
+                socket.emit('actionLoan', { playerId: id, amount: amount });
+                input.value = '';
+            }
+        }
+
+        function reqNextPhase() {
+            socket.emit('nextPhase');
+        }
+
+        // === 승리 처리 모달 관련 ===
+        function openWinModal(id, name) {
+            // 실수 방지용: 팟이 있어야 승리 가능
+            if (parseInt(document.getElementById('potAmount').innerText) === 0) return;
+
+            currentWinnerId = id;
+            document.getElementById('modalText').innerText = `${name} 님이 팟을 가져갑니까?`;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function reqConfirmWin() {
+            if (currentWinnerId) {
+                socket.emit('confirmWin', { playerId: currentWinnerId });
+                closeModal();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            currentWinnerId = null;
+        }
+
+        // ... 기존 함수들 (reqNextPhase 등) 아래에 추가
+
+        // 판 초기화 요청
+        function reqResetGame() {
+            if (confirm("모든 플레이어의 칩을 처음 상태로 되돌리고 판을 초기화할까요?")) {
+                socket.emit('resetGame');
+            }
+        }
+
+        function reqRemovePlayer(id) {
+            if (confirm("정말 나가시겠습니까? 모든 칩 정보가 사라집니다.")) {
+                // 나갈 때 로컬 스토리지 이름 정보도 지워서 자동 로그인을 방지합니다.
+                localStorage.removeItem('poker_name');
+                socket.emit('removePlayer', { playerId: id, uuid: MY_UUID });
+
+                // 페이지 새로고침을 통해 초기 화면으로 이동 (선택 사항)
+                location.reload();
+            }
+        }
+
+        // 연결되자마자 서버에 내가 누구였는지 알림 (이미 방에 있다면 권한 복구용)
+        socket.on('connect', () => {
+            const savedName = localStorage.getItem('poker_name'); // 이름을 저장해뒀다면
+            if (savedName) {
+                socket.emit('addPlayer', { name: savedName, initialChips: 0, uuid: MY_UUID });
+            }
+        });
+
+    </script>
+</body>
+
+</html>
