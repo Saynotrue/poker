@@ -8,14 +8,12 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// 현재 파일이 있는 폴더(루트) 자체를 정적 폴더로 사용
+// 핵심 수정: 현재 폴더(__dirname)를 정적 폴더로 지정하고 index.html을 직접 연결
 app.use(express.static(__dirname));
 
-// 루트 접속 시 index.html을 직접 지정해서 보내줌
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
 // === 게임 상태 데이터 (서버가 원본을 가짐) ===
 let gameState = {
     roundIndex: 0, // 0:프리플랍, 1:플랍, 2:턴, 3:리버
