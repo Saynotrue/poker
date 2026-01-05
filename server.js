@@ -8,12 +8,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// 핵심 수정: 현재 폴더(__dirname)를 정적 폴더로 지정하고 index.html을 직접 연결
-app.use(express.static(__dirname));
+// 정적 파일 제공 (index.html이 있는 폴더)
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 // === 게임 상태 데이터 (서버가 원본을 가짐) ===
 let gameState = {
     roundIndex: 0, // 0:프리플랍, 1:플랍, 2:턴, 3:리버
@@ -228,6 +225,20 @@ io.on('connection', (socket) => {
             updateCallAmounts();
             io.emit('updateState', gameState);
         }
+    });
+
+    // [추가] 모든 플레이어 삭제 (목록 초기화)
+    socket.on('deleteAllPlayers', () => {
+        // 1. 플레이어 목록을 빈 배열로 초기화
+        gameState.players = [];
+
+        // 2. 게임 판 정보도 초기화
+        gameState.roundIndex = 0;
+        gameState.phase = 'bet';
+        gameState.pot = 0;
+
+        // 3. 모든 클라이언트에 알림
+        io.emit('updateState', gameState);
     });
 });
 
