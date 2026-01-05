@@ -306,6 +306,18 @@
         </button>
     </div>
 
+    <div style="margin-bottom: 80px; display: flex; justify-content: center; gap: 10px;">
+        <button onclick="reqResetGame()"
+            style="background: #7f8c8d; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+            🔄 칩 초기화
+        </button>
+
+        <button onclick="reqDeleteAllPlayers()"
+            style="background: #c0392b; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+            ❌ 플레이어 전체 삭제
+        </button>
+    </div>
+
     <div id="pot">POT: <span id="potAmount">0</span></div>
 
     <div class="modal" id="modal">
@@ -518,6 +530,13 @@
                 socket.emit('addPlayer', { name: savedName, initialChips: 0, uuid: MY_UUID });
             }
         });
+
+        // [추가] 플레이어 전체 삭제 요청 함수
+        function reqDeleteAllPlayers() {
+            if (confirm("정말로 모든 플레이어를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없으며 모든 참가자가 목록에서 사라집니다.")) {
+                socket.emit('deleteAllPlayers');
+            }
+        }
 
     </script>
 </body>
